@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Écho des Cœurs - Maison des Ours Célestes</title>
+    <!-- Utilisation de unpkg pour éviter le 404 de cdnjs -->
+    <script src="https://unpkg.com/three@0.148.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;1,500&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #220000;
+            color: #ffd700;
+            font-family: 'Playfair Display', serif;
+        }
+
+        #experience-canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .luxury-text {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .glass-panel {
+            background: rgba(80, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 4px;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.3);
+        }
+
+        /* Seamless Marquee Animation */
+        @keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .marquee-container {
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .marquee-content {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            animation: scroll 120s linear infinite;
+        }
+
+        .marquee-content:hover {
+            animation-play-state: paused;
+        }
+
+        .modal {
+            display: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .nav-link {
+            position: relative;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #eab308;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        #poetry-line {
+            text-shadow: 0 0 20px rgba(255, 0, 0, 1), 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .aura {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 30%, rgba(255, 0, 0, 0.15) 70%, rgba(20, 0, 0, 0.6) 100%);
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="aura"></div>
+    <canvas id="experience-canvas"></canvas>
+
+    <!-- Interface -->
+    <div id="ui-layer" class="absolute inset-0 z-10 flex flex-col justify-between pointer-events-none">
+        <header class="p-8 flex justify-between items-start pointer-events-auto">
+            <div class="text-left cursor-pointer" onclick="closeAllModals()">
+                <h1 class="luxury-text text-2xl md:text-3xl font-bold text-red-600">L'Écho des Cœurs</h1>
+                <p class="text-xs italic opacity-80 text-yellow-400">Maison des Ours Célestes</p>
+            </div>
+            <nav
+                class="flex md:flex gap-4 md:gap-8 text-[10px] md:text-sm luxury-text pt-2 absolute bottom-24 left-0 w-full justify-center md:static md:w-auto md:bg-transparent z-50 pointer-events-auto">
+                <span
+                    class="nav-link cursor-pointer hover:text-yellow-400 transition bg-black/50 md:bg-transparent px-2 py-1 rounded"
+                    onclick="showModal('origine')">L'Origine</span>
+                <span
+                    class="nav-link cursor-pointer hover:text-yellow-400 transition bg-black/50 md:bg-transparent px-2 py-1 rounded"
+                    onclick="showModal('collections')">Collections</span>
+                <span
+                    class="nav-link cursor-pointer hover:text-yellow-400 transition bg-black/50 md:bg-transparent px-2 py-1 rounded"
+                    onclick="showModal('poeme')">Le
+                    Poème</span>
+            </nav>
+            <div id="basket-btn"
+                class="glass-panel p-2 px-6 pointer-events-auto cursor-pointer transition transform duration-300"
+                onclick="showBasketModal()">
+                <span id="basket-count" class="text-sm text-red-100">Panier (0)</span>
+            </div>
+        </header>
+
+        <div id="main-content"
+            class="flex flex-col items-center justify-end pb-0 text-center px-0 transition-all duration-1000 h-full pointer-events-none absolute inset-0 overflow-hidden">
+            <!-- Bottom Marquee for Poetry -->
+            <div
+                class="w-full bg-black/40 backdrop-blur-sm border-t border-red-500/30 py-6 overflow-hidden marquee-container shadow-[0_-10px_40px_rgba(255,0,0,0.2)]">
+                <div
+                    class="marquee-content text-xl md:text-2xl italic text-red-50 font-serif opacity-90 drop-shadow-lg pr-8">
+                    "Dans le brasier des nébuleuses, la douceur trouve son royaume." — L'Architecte &nbsp;✦&nbsp;
+                    "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction." —
+                    Antoine de Saint-Exupéry &nbsp;✦&nbsp;
+                    "La vie est une fleur dont l'amour est le miel." — Victor Hugo &nbsp;✦&nbsp;
+                    "Je t'aime sans savoir comment, ni quand, ni d'où." — Pablo Neruda &nbsp;✦&nbsp;
+                    "L'amour fait les plus grandes douceurs et les plus sensibles infortunes de la vie." — Madeleine de
+                    Scudéry &nbsp;✦&nbsp;
+                    "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé." — George Sand &nbsp;✦&nbsp;
+                    "L'amour est l'emblème de l'éternité." — Germaine de Staël &nbsp;✦&nbsp;
+                    "On n'aime que ce qui nous échappe." — Marcel Proust &nbsp;✦&nbsp;
+                    "Le véritable amour ne se donne pas, il se partage." — Proverbe &nbsp;✦&nbsp;
+                    "La mesure de l'amour, c'est d'aimer sans mesure." — Saint Augustin &nbsp;✦&nbsp;
+                    "L'amour est la seule chose qui grandit quand on la partage." — Antoine de Saint-Exupéry
+                    &nbsp;✦&nbsp;
+                </div>
+                <div
+                    class="marquee-content text-xl md:text-2xl italic text-red-50 font-serif opacity-90 drop-shadow-lg pr-8">
+                    "Dans le brasier des nébuleuses, la douceur trouve son royaume." — L'Architecte &nbsp;✦&nbsp;
+                    "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction." —
+                    Antoine de Saint-Exupéry &nbsp;✦&nbsp;
+                    "La vie est une fleur dont l'amour est le miel." — Victor Hugo &nbsp;✦&nbsp;
+                    "Je t'aime sans savoir comment, ni quand, ni d'où." — Pablo Neruda &nbsp;✦&nbsp;
+                    "L'amour fait les plus grandes douceurs et les plus sensibles infortunes de la vie." — Madeleine de
+                    Scudéry &nbsp;✦&nbsp;
+                    "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé." — George Sand &nbsp;✦&nbsp;
+                    "L'amour est l'emblème de l'éternité." — Germaine de Staël &nbsp;✦&nbsp;
+                    "On n'aime que ce qui nous échappe." — Marcel Proust &nbsp;✦&nbsp;
+                    "Le véritable amour ne se donne pas, il se partage." — Proverbe &nbsp;✦&nbsp;
+                    "La mesure de l'amour, c'est d'aimer sans mesure." — Saint Augustin &nbsp;✦&nbsp;
+                    "L'amour est la seule chose qui grandit quand on la partage." — Antoine de Saint-Exupéry
+                    &nbsp;✦&nbsp;
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Panel - Middle Left (Mobile: Bottom Left) -->
+        <div
+            class="fixed left-4 bottom-24 md:left-8 md:top-1/2 md:bottom-auto md:transform md:-translate-y-1/2 max-w-[150px] md:max-w-md z-10 pointer-events-auto">
+            <div class="glass-panel p-4 md:p-8 cursor-pointer transform hover:scale-105 transition duration-500"
+                onclick="showModal('collections')">
+                <p class="luxury-text text-xs md:text-sm text-yellow-500 mb-1 md:mb-2 tracking-widest">Coup de Cœur</p>
+                <h3 class="text-sm md:text-3xl mb-1 md:mb-2 text-white truncation">L'Ours Rougeoyant</h3>
+                <button
+                    class="text-[10px] md:text-sm luxury-text border-b border-yellow-500/50 pb-1 mt-2 md:mt-3 text-red-100">Découvrir</button>
+            </div>
+        </div>
+
+        <!-- Guide Panel - Middle Right (Mobile: Top Right) -->
+        <div id="wish-hint"
+            class="fixed right-4 top-24 md:right-10 md:top-1/2 md:transform md:-translate-y-1/2 max-w-[160px] md:max-w-sm z-50 pointer-events-auto transition-opacity duration-500">
+            <div class="glass-panel p-4 md:p-8 cursor-pointer transform hover:scale-105 transition duration-500"
+                onclick="this.parentElement.style.opacity='0'; setTimeout(()=>this.parentElement.remove(), 500);">
+                <div class="flex flex-col items-center text-center gap-2 md:gap-4">
+                    <span class="text-2xl md:text-4xl animate-bounce">✨</span>
+                    <div>
+                        <p class="luxury-text text-[10px] md:text-sm text-yellow-500 mb-1 md:mb-2 tracking-widest">
+                            MISSION</p>
+                        <h3 class="luxury-text text-sm md:text-2xl text-white mb-1 md:mb-2">Chasse aux Cœurs</h3>
+                        <div class="w-8 md:w-16 h-px bg-yellow-500/50 mx-auto mb-2 md:mb-3"></div>
+                        <p class="text-[10px] md:text-sm text-red-50 italic leading-relaxed hidden md:block">
+                            De précieux souvenirs sont dispersés dans le cosmos.<br>
+                            Trouvez-les pour révéler leurs secrets.
+                        </p>
+                        <p class="text-[10px] md:text-sm text-red-50 italic leading-relaxed md:hidden">
+                            Trouvez les souvenirs cachés.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modales -->
+        <div id="modal-origine" class="modal absolute inset-0 z-20 flex items-center justify-center p-4">
+            <div class="glass-panel max-w-2xl w-full p-12 relative">
+                <button onclick="closeAllModals()"
+                    class="absolute top-6 right-6 text-yellow-500 text-2xl z-50">✕</button>
+                <h2 class="luxury-text text-3xl text-red-500 mb-8 text-center border-b border-red-900 pb-4">L'Origine
+                </h2>
+                <p class="text-lg italic leading-relaxed text-red-50">Nos ours ne sont pas fabriqués, ils sont invoqués
+                    au
+                    centre des supernovas les plus douces de la galaxie. Un héritage de pure tendresse.</p>
+            </div>
+        </div>
+
+        <div id="modal-poeme" class="modal absolute inset-0 z-20 flex items-center justify-center p-4">
+            <div class="glass-panel max-w-2xl w-full p-12 relative text-center">
+                <button onclick="closeAllModals()"
+                    class="absolute top-6 right-6 text-yellow-500 text-2xl z-50">✕</button>
+                <h2 class="luxury-text text-3xl text-red-500 mb-8 pb-4">Hymne aux Étoiles</h2>
+                <div class="text-lg italic leading-loose text-red-50 font-serif">
+                    <p class="mb-4">"Sous la voûte céleste où dansent les comètes,</p>
+                    <p class="mb-4">J'ai tissé pour toi un ours de lumière,</p>
+                    <p class="mb-4">Gardien silencieux de nos rêves secrets,</p>
+                    <p class="mb-4">Éclat d'éternité dans la nuit polaire."</p>
+                    <div class="w-16 h-px bg-yellow-500/50 mx-auto my-6"></div>
+                    <p class="text-sm text-yellow-500/80 uppercase tracking-widest">— L'Architecte Céleste</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-collections" class="modal absolute inset-0 z-20 flex items-center justify-center p-4">
+            <div class="glass-panel max-w-5xl w-full h-[85vh] p-8 relative flex flex-col">
+                <button onclick="closeAllModals()"
+                    class="absolute top-6 right-6 text-yellow-500 text-2xl z-50">✕</button>
+                <h2 class="luxury-text text-3xl text-red-500 mb-8 text-center sticky top-0 bg-transparent z-10">La
+                    Collection Ours Célestes</h2>
+
+                <div class="overflow-y-auto flex-grow pr-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8">
+                        <div class="glass-panel p-6 text-center border-red-500/20 overflow-hidden group">
+                            <div class="h-64 mb-4 overflow-hidden rounded bg-black/20 flex items-center justify-center">
+                                <img src="assets/bear_beige.jpg"
+                                    class="w-full h-full object-contain group-hover:scale-110 transition duration-700">
+                            </div>
+                            <h3 class="luxury-text text-lg mb-2 text-red-100">Ours Rouge Rubis</h3>
+                            <p class="text-xs text-red-200/60 italian mb-3">"Un cœur ardent au milieu de l'hiver."</p>
+                            <span class="text-xl text-yellow-500 font-serif">450 €</span>
+                        </div>
+                        <div class="glass-panel p-6 text-center border-red-500/20 overflow-hidden group">
+                            <div class="h-64 mb-4 overflow-hidden rounded bg-black/20 flex items-center justify-center">
+                                <img src="assets/bear_black.jpg"
+                                    class="w-full h-full object-contain group-hover:scale-110 transition duration-700">
+                            </div>
+                            <h3 class="luxury-text text-lg mb-2 text-red-100">Ours Étoilé</h3>
+                            <p class="text-xs text-red-200/60 italian mb-3">"Toute la nuit dans un regard."</p>
+                            <span class="text-xl text-yellow-500 font-serif">520 €</span>
+                        </div>
+                        <div class="glass-panel p-6 text-center border-red-500/20 overflow-hidden group">
+                            <div class="h-64 mb-4 overflow-hidden rounded bg-black/20 flex items-center justify-center">
+                                <img src="assets/bear_green.jpg"
+                                    class="w-full h-full object-contain group-hover:scale-110 transition duration-700">
+                            </div>
+                            <h3 class="luxury-text text-lg mb-2 text-red-100">Ours d'Aurore</h3>
+                            <p class="text-xs text-red-200/60 italian mb-3">"La promesse d'un matin nouveau."</p>
+                            <span class="text-xl text-yellow-500 font-serif">480 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrolling Poem Footer -->
+                <div
+                    class="mt-4 pt-4 border-t border-red-500/30 overflow-hidden marquee-container relative h-12 flex items-center">
+                    <div class="marquee-content text-red-100 italic text-lg font-serif opacity-80 pr-8">
+                        "Dans le brasier des nébuleuses, la douceur trouve son royaume." — L'Architecte &nbsp;✦&nbsp;
+                        "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction."
+                        —
+                        Antoine de Saint-Exupéry &nbsp;✦&nbsp;
+                        "La vie est une fleur dont l'amour est le miel." — Victor Hugo &nbsp;✦&nbsp;
+                        "Je t'aime sans savoir comment, ni quand, ni d'où." — Pablo Neruda &nbsp;✦&nbsp;
+                        "L'amour fait les plus grandes douceurs et les plus sensibles infortunes de la vie." — Madeleine
+                        de
+                        Scudéry &nbsp;✦&nbsp;
+                        "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé." — George Sand &nbsp;✦&nbsp;
+                        "L'amour est l'emblème de l'éternité." — Germaine de Staël &nbsp;✦&nbsp;
+                        "On n'aime que ce qui nous échappe." — Marcel Proust &nbsp;✦&nbsp;
+                        "Le véritable amour ne se donne pas, il se partage." — Proverbe &nbsp;✦&nbsp;
+                        "La mesure de l'amour, c'est d'aimer sans mesure." — Saint Augustin &nbsp;✦&nbsp;
+                        "L'amour est la seule chose qui grandit quand on la partage." — Antoine de Saint-Exupéry
+                        &nbsp;✦&nbsp;
+                    </div>
+                    <div class="marquee-content text-red-100 italic text-lg font-serif opacity-80 pr-8">
+                        "Dans le brasier des nébuleuses, la douceur trouve son royaume." — L'Architecte &nbsp;✦&nbsp;
+                        "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction."
+                        —
+                        Antoine de Saint-Exupéry &nbsp;✦&nbsp;
+                        "La vie est une fleur dont l'amour est le miel." — Victor Hugo &nbsp;✦&nbsp;
+                        "Je t'aime sans savoir comment, ni quand, ni d'où." — Pablo Neruda &nbsp;✦&nbsp;
+                        "L'amour fait les plus grandes douceurs et les plus sensibles infortunes de la vie." — Madeleine
+                        de
+                        Scudéry &nbsp;✦&nbsp;
+                        "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé." — George Sand &nbsp;✦&nbsp;
+                        "L'amour est l'emblème de l'éternité." — Germaine de Staël &nbsp;✦&nbsp;
+                        "On n'aime que ce qui nous échappe." — Marcel Proust &nbsp;✦&nbsp;
+                        "Le véritable amour ne se donne pas, il se partage." — Proverbe &nbsp;✦&nbsp;
+                        "La mesure de l'amour, c'est d'aimer sans mesure." — Saint Augustin &nbsp;✦&nbsp;
+                        "L'amour est la seule chose qui grandit quand on la partage." — Antoine de Saint-Exupéry
+                        &nbsp;✦&nbsp;
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let scene, camera, renderer, nebula, heartTrail, bokehParticles, starBurst, particleBear;
+            let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+            let cursorTrail;
+            const trailPointsCount = 50;
+            let rippleHeart;
+            let wishParticles = [];
+            const wishes = [
+                { text: "L'amour est la poésie des sens.", author: "Honoré de Balzac" },
+                { text: "Aimer, ce n'est pas se regarder l'un l'autre, c'est regarder ensemble dans la même direction.", author: "Antoine de Saint-Exupéry" },
+                { text: "La vie est une fleur dont l'amour est le miel.", author: "Victor Hugo" },
+                { text: "Je t'aime sans savoir comment, ni quand, ni d'où.", author: "Pablo Neruda" },
+                { text: "L'amour fait les plus grandes douceurs et les plus sensibles infortunes de la vie.", author: "Madeleine de Scudéry" },
+                { text: "Aimer, c'est trouver sa richesse hors de soi.", author: "Alain" },
+                { text: "Il n'y a qu'un bonheur dans la vie, c'est d'aimer et d'être aimé.", author: "George Sand" },
+                { text: "L'amour est l'emblème de l'éternité.", author: "Germaine de Staël" },
+                { text: "On n'aime que ce qui nous échappe.", author: "Marcel Proust" },
+                { text: "Le véritable amour ne se donne pas, il se partage.", author: "Proverbe" },
+                { text: "Aimer, c'est préférer un autre à soi-même.", author: "Paul Léautaud" },
+                { text: "L'amour ne se prédit pas, il se construit.", author: "Simone de Beauvoir" },
+                { text: "Là où est ton trésor, là aussi sera ton cœur.", author: "La Bible" },
+                { text: "L'amour est une douce folie.", author: "Platon" },
+                { text: "Aimer, c'est tout donner et se donner soi-même.", author: "Sainte Thérèse de Lisieux" },
+                { text: "Le cœur a ses raisons que la raison ne connaît point.", author: "Blaise Pascal" },
+                { text: "L'amour est la seule chose qui grandit quand on la partage.", author: "Antoine de Saint-Exupéry" },
+                { text: "On ne voit bien qu'avec le cœur. L'essentiel est invisible pour les yeux.", author: "Antoine de Saint-Exupéry" },
+                { text: "Aimer, c'est agir.", author: "Victor Hugo" },
+                { text: "L'amour, c'est l'espace et le temps rendus sensibles au cœur.", author: "Marcel Proust" }
+            ];
+            let collectedWishes = [];
+
+            function updateBasketUI() {
+                const basketCount = document.getElementById('basket-count');
+                if (basketCount) {
+                    basketCount.innerText = `Panier (${collectedWishes.length})`;
+                    // Animation
+                    const basket = document.getElementById('basket-btn');
+                    basket.classList.remove('animate-bounce');
+                    void basket.offsetWidth; // Trigger reflow
+                    basket.classList.add('animate-bounce');
+                }
+            }
+
+            function showBasketModal() {
+                if (collectedWishes.length === 0) {
+                    alert('Votre panier est vide de matière, mais plein de rêves. Trouvez des cœurs pour le remplir.');
+                    return;
+                }
+
+                const modalId = 'modal-basket';
+                let modal = document.getElementById(modalId);
+
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = modalId;
+                    modal.className = 'modal absolute inset-0 z-20 flex items-center justify-center p-4';
+                    document.getElementById('ui-layer').appendChild(modal);
+                }
+
+                let contentHtml = `
+                    <div class="glass-panel max-w-2xl w-full p-8 relative flex flex-col max-h-[80vh]">
+                        <button onclick="closeAllModals()" class="absolute top-6 right-6 text-yellow-500 text-2xl z-50">✕</button>
+                        <h2 class="luxury-text text-3xl text-red-500 mb-8 text-center border-b border-red-900 pb-4">Mon Recueil de Souvenirs</h2>
+                        <div class="overflow-y-auto flex-grow pr-2 space-y-6">
+                `;
+
+                collectedWishes.forEach(wish => {
+                    contentHtml += `
+                        <div class="p-4 border border-red-500/20 rounded bg-black/20">
+                            <p class="text-lg italic text-red-50 font-serif mb-2">"${wish.text}"</p>
+                            <p class="text-xs text-yellow-500 text-right">— ${wish.author}</p>
+                        </div>
+                    `;
+                });
+
+                contentHtml += `
+                        </div>
+                    </div>
+                `;
+
+                modal.innerHTML = contentHtml;
+
+                closeAllModals();
+                modal.classList.add('active');
+                gsap.fromTo(`#${modalId} .glass-panel`, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 });
+            }
+
+            const poetryLines = [
+                "Dans le brasier des nébuleuses, la douceur trouve son royaume.",
+                "Un ours né de la poussière d'étoiles.",
+                "L'univers n'est qu'un écrin pour notre amour.",
+                "Lumière, rouge et tendresse infinie."
+            ];
+            let currentLine = 0;
+
+            function showModal(id) {
+                closeAllModals();
+                document.getElementById(`modal-${id}`).classList.add('active');
+                gsap.fromTo(`#modal-${id} .glass-panel`, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 });
+            }
+
+            function closeAllModals() {
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            }
+
+            function init() {
+                clock = new THREE.Clock();
+                const canvas = document.getElementById('experience-canvas');
+
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x220000);
+                scene.fog = new THREE.FogExp2(0x1a0000, 0.0008);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 5000);
+                // Initial camera position check
+                if (window.innerWidth < 768) {
+                    camera.position.set(0, 0, 1100);
+                } else {
+                    camera.position.set(0, 0, 700);
+                }
+
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                createCosmos();
+                createParticleBear();
+                createCursorTrail();
+                createWishParticles();
+                initAudio();
+                animate();
+                cyclePoetry();
+
+                window.addEventListener('resize', onWindowResize);
+                console.log("Three.js Experience Initialized Correctly.");
+            }
+
+            function createStarTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                grd.addColorStop(0, 'white');
+                grd.addColorStop(0.2, 'rgba(255, 200, 100, 0.8)');
+                grd.addColorStop(0.5, 'rgba(255, 50, 0, 0.2)');
+                grd.addColorStop(1, 'transparent');
+                ctx.fillStyle = grd; ctx.fillRect(0, 0, 128, 128);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(64, 0); ctx.lineTo(64, 128); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, 64); ctx.lineTo(128, 64); ctx.stroke();
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            function createCosmos() {
+                // 1. Nebula (Dynamic color - will cycle through hues)
+                const nebulaGeo = new THREE.BufferGeometry();
+                const positions = []; const colors = [];
+                for (let i = 0; i < 100000; i++) {
+                    positions.push((Math.random() - 0.5) * 3000, (Math.random() - 0.5) * 3000, (Math.random() - 0.5) * 3000);
+                    colors.push(1, Math.random() * 0.1, 0);
+                }
+                nebulaGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                nebulaGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+                nebula = new THREE.Points(nebulaGeo, new THREE.PointsMaterial({
+                    size: 3, vertexColors: true, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending
+                }));
+                scene.add(nebula);
+
+                // 2. Heart Trail (Golden glitter)
+                const heartGeo = new THREE.BufferGeometry();
+                const heartPos = [];
+                for (let i = 0; i < 20000; i++) {
+                    const step = Math.random() * Math.PI * 2;
+                    const x = 16 * Math.pow(Math.sin(step), 3);
+                    const y = 13 * Math.cos(step) - 5 * Math.cos(2 * step) - 2 * Math.cos(3 * step) - Math.cos(4 * step);
+                    const scale = 15 + Math.random() * 5;
+                    heartPos.push(x * scale, y * scale, (Math.random() - 0.5) * 50);
+                }
+                heartGeo.setAttribute('position', new THREE.Float32BufferAttribute(heartPos, 3));
+                heartTrail = new THREE.Points(heartGeo, new THREE.PointsMaterial({
+                    size: 2.5, color: 0xffaa00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+                }));
+                scene.add(heartTrail);
+
+                // 3. Bokeh Particles
+                const bokehGeo = new THREE.BufferGeometry();
+                const bokehPos = [];
+                for (let i = 0; i < 4000; i++) {
+                    bokehPos.push((Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000);
+                }
+                bokehGeo.setAttribute('position', new THREE.Float32BufferAttribute(bokehPos, 3));
+                bokehParticles = new THREE.Points(bokehGeo, new THREE.PointsMaterial({
+                    size: 10, color: 0xff5500, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending
+                }));
+                scene.add(bokehParticles);
+
+                // 4. StarBurst (Center top)
+                const starGeo = new THREE.BufferGeometry();
+                starGeo.setAttribute('position', new THREE.Float32BufferAttribute([250, 250, 0], 3));
+                starBurst = new THREE.Points(starGeo, new THREE.PointsMaterial({
+                    size: 250, map: createStarTexture(), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending
+                }));
+                scene.add(starBurst);
+            }
+
+            function createTrailTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                grd.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grd.addColorStop(0.4, 'rgba(255, 255, 255, 0.5)');
+                grd.addColorStop(1, 'transparent');
+                ctx.fillStyle = grd; ctx.fillRect(0, 0, 128, 128);
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            function createCursorTrail() {
+                const geo = new THREE.BufferGeometry();
+                const pos = new Float32Array(trailPointsCount * 3);
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                const mat = new THREE.PointsMaterial({
+                    size: 8, // Increased size
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending,
+                    map: createTrailTexture() // Use new white texture
+                });
+                cursorTrail = new THREE.Points(geo, mat);
+                scene.add(cursorTrail);
+            }
+
+            function createWishParticles() {
+                // Create heart-shaped particles that contain wishes
+                const wishCount = 20;
+
+                // Create heart shape
+                const createHeartShape = () => {
+                    const shape = new THREE.Shape();
+                    const x = 0, y = 0;
+                    shape.moveTo(x + 5, y + 5);
+                    shape.bezierCurveTo(x + 5, y + 5, x + 4, y, x, y);
+                    shape.bezierCurveTo(x - 6, y, x - 6, y + 7, x - 6, y + 7);
+                    shape.bezierCurveTo(x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19);
+                    shape.bezierCurveTo(x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7);
+                    shape.bezierCurveTo(x + 16, y + 7, x + 16, y, x + 10, y);
+                    shape.bezierCurveTo(x + 7, y, x + 5, y + 5, x + 5, y + 5);
+                    return shape;
+                };
+
+                for (let i = 0; i < wishCount; i++) {
+                    const heartShape = createHeartShape();
+                    const geo = new THREE.ExtrudeGeometry(heartShape, {
+                        depth: 1,
+                        bevelEnabled: true,
+                        bevelThickness: 1,
+                        bevelSize: 0.5,
+                        bevelSegments: 2
+                    });
+
+                    // Red-White Slightly Shiny Material
+                    const mat = new THREE.MeshPhysicalMaterial({
+                        color: 0xff4444, // Soft Red
+                        emissive: 0xffffff, // White glow
+                        emissiveIntensity: 0.1, // Subtle
+                        roughness: 0.4, // "Un tout petit peu brillant"
+                        metalness: 0.2,
+                        clearcoat: 0.5,
+                        clearcoatRoughness: 0.4,
+                        side: THREE.DoubleSide
+                    });
+
+                    const heart = new THREE.Mesh(geo, mat);
+                    heart.scale.set(1.2, 1.2, 1.2);
+
+                    // Widely scattered
+                    const radius = 350 + Math.random() * 900;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+
+                    heart.position.set(
+                        radius * Math.sin(phi) * Math.cos(theta),
+                        radius * Math.sin(phi) * Math.sin(theta) * 0.8,
+                        radius * Math.cos(phi) * 0.8
+                    );
+
+                    heart.userData.wishIndex = i % wishes.length;
+                    heart.userData.isWish = true;
+                    heart.userData.floatSpeed = 0.3 + Math.random() * 0.4;
+                    heart.userData.floatOffset = Math.random() * Math.PI * 2;
+
+                    wishParticles.push(heart);
+                    scene.add(heart);
+                }
+
+                // Add lighting for the 3D hearts
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+                const pointLight = new THREE.PointLight(0xffccaa, 1, 1000);
+                pointLight.position.set(0, 0, 100);
+                scene.add(pointLight);
+
+            }
+
+
+            function createParticleBear() {
+                const bearGroup = new THREE.Group();
+
+                // Material for general fur
+                const particleMat = new THREE.PointsMaterial({
+                    size: 2.5,
+                    color: 0xffaa00,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending
+                });
+
+                // Material for lighter features (muzzle, paw pads)
+                const lightMat = new THREE.PointsMaterial({
+                    size: 2.8,
+                    color: 0xffeebb,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+
+                // Material for dark features (eyes, nose)
+                const darkMat = new THREE.PointsMaterial({
+                    size: 3.2,
+                    color: 0x442200,
+                    transparent: true,
+                    opacity: 1.0,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const addParticlePart = (radius, pointsCount, pos, scale = [1, 1, 1], mat = particleMat) => {
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = [];
+                    for (let i = 0; i < pointsCount; i++) {
+                        const isSurface = Math.random() > 0.2;
+                        const r = isSurface ? radius : radius * Math.sqrt(Math.random());
+                        const phi = Math.random() * Math.PI * 2;
+                        const theta = Math.acos(2 * Math.random() - 1);
+
+                        positions.push(
+                            r * Math.sin(theta) * Math.cos(phi) * scale[0],
+                            r * Math.sin(theta) * Math.sin(phi) * scale[1],
+                            r * Math.cos(theta) * scale[2]
+                        );
+                    }
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                    const points = new THREE.Points(geometry, mat);
+                    points.position.set(...pos);
+                    bearGroup.add(points);
+                };
+
+                // 1. Body (Pear shaped/Chubby)
+                addParticlePart(42, 12000, [0, -15, 0], [1.1, 1.2, 0.9]);
+
+                // 2. Head (Large and cute as per image)
+                addParticlePart(38, 10000, [0, 50, 5], [1.15, 1, 1.05]);
+
+                // 3. Muzzle (Lighter and protruding - very important for the look)
+                addParticlePart(18, 3000, [0, 42, 35], [1.2, 0.9, 0.8], lightMat);
+
+                // 4. Ears (Large, round, positioned on top corners)
+                addParticlePart(18, 2500, [-34, 75, 0], [1, 1, 0.6]);
+                addParticlePart(18, 2500, [34, 75, 0], [1, 1, 0.6]);
+
+                // 5. Arms (Chunky)
+                addParticlePart(15, 3000, [-45, 15, 5], [0.9, 1.6, 0.9]);
+                addParticlePart(15, 3000, [45, 15, 5], [0.9, 1.6, 0.9]);
+
+                // 6. Legs (Large chubby legs with flat soles)
+                addParticlePart(20, 4500, [-28, -55, 15], [1.2, 1, 1.4]);
+                addParticlePart(20, 4500, [28, -55, 15], [1.2, 1, 1.4]);
+
+                // 7. Paw Pads (Lighter highlights on feet)
+                addParticlePart(12, 1000, [-28, -60, 35], [1.1, 1, 0.2], lightMat);
+                addParticlePart(12, 1000, [28, -60, 35], [1.1, 1, 0.2], lightMat);
+
+                // 8. Face Features (Dark brown for clarity)
+                // Eyes (small black beads)
+                addParticlePart(4, 500, [-15, 58, 40], [1, 1, 1], darkMat);
+                addParticlePart(4, 500, [15, 58, 40], [1, 1, 1], darkMat);
+                // Nose
+                addParticlePart(6, 400, [0, 48, 48], [1.2, 0.8, 1], darkMat);
+
+                particleBear = bearGroup;
+                scene.add(particleBear);
+
+                // Glowing core
+                const glow = new THREE.Mesh(
+                    new THREE.PlaneGeometry(350, 350),
+                    new THREE.MeshBasicMaterial({
+                        map: createCircleTexture(),
+                        color: 0x993300,
+                        transparent: true,
+                        opacity: 0.15,
+                        blending: THREE.AdditiveBlending
+                    })
+                );
+                glow.position.z = -30;
+                particleBear.add(glow);
+            }
+
+            function createCircleTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                const grd = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                grd.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grd.addColorStop(1, 'transparent');
+                ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(64, 64, 64, 0, Math.PI * 2); ctx.fill();
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                // Adjust camera distance for mobile
+                if (window.innerWidth < 768) {
+                    camera.position.z = 1100; // Further back on mobile
+                } else {
+                    camera.position.z = 700;
+                }
+            }
+
+            window.addEventListener('mousemove', (e) => {
+                targetMouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+                targetMouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+            });
+
+            window.addEventListener('click', (e) => {
+                checkWishClick(e);
+            });
+
+            function checkWishClick(e) {
+                const mouse = new THREE.Vector2(
+                    (e.clientX / window.innerWidth) * 2 - 1,
+                    -(e.clientY / window.innerHeight) * 2 + 1
+                );
+
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+
+                const intersects = raycaster.intersectObjects(wishParticles);
+                if (intersects.length > 0) {
+                    const object = intersects[0].object;
+                    const wishIndex = object.userData.wishIndex;
+
+                    // Hide hint on first click
+                    const hint = document.getElementById('wish-hint');
+                    if (hint) {
+                        hint.style.opacity = '0';
+                        setTimeout(() => hint.remove(), 500);
+                    }
+
+                    // Animation: Scale up and fade out ("pop" effect)
+                    // Using a simple animation loop since we might not have a full tween engine for this specific object property
+                    // But GSAP is available in the project (imported in head), so we use it.
+
+                    if (window.gsap) {
+                        gsap.to(object.scale, {
+                            x: 3, y: 3, z: 3,
+                            duration: 0.4,
+                            ease: "back.out(1.7)"
+                        });
+                        gsap.to(object.material, {
+                            opacity: 0,
+                            duration: 0.4,
+                            onComplete: () => {
+                                scene.remove(object);
+                                // Remove from array to stop raycasting
+                                const index = wishParticles.indexOf(object);
+                                if (index > -1) wishParticles.splice(index, 1);
+
+                                // Show card after effect
+                                collectedWishes.push(wishes[wishIndex]);
+                                updateBasketUI();
+                                showWishCard(wishes[wishIndex]);
+                            }
+                        });
+                    } else {
+                        // Fallback if GSAP not ready
+                        scene.remove(object);
+                        const index = wishParticles.indexOf(object);
+                        if (index > -1) wishParticles.splice(index, 1);
+
+                        collectedWishes.push(wishes[wishIndex]);
+                        updateBasketUI();
+                        showWishCard(wishes[wishIndex]);
+                    }
+                }
+            }
+
+            function showWishCard(wish) {
+                // Create modal overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 10000;
+                display: flex; align-items: center; justify-content: center;
+                animation: fadeIn 0.3s ease;
+            `;
+
+                const card = document.createElement('div');
+                card.style.cssText = `
+                background: linear-gradient(135deg, #2a0a0a 0%, #4a1a1a 100%);
+                border: 2px solid #ff6600;
+                border-radius: 20px;
+                padding: 40px;
+                max-width: 500px;
+                box-shadow: 0 0 40px rgba(255, 102, 0, 0.5);
+                animation: scaleIn 0.4s ease;
+            `;
+
+                card.innerHTML = `
+                <div style="text-align: center; color: #ffddaa; font-family: 'Playfair Display', serif;">
+                    <div style="font-size: 24px; line-height: 1.6; margin-bottom: 30px; font-style: italic;">
+                        " ${wish.text}"
+                    </div>
+                    <div style="font-size: 16px; color: #ff9944; margin-top: 20px;">
+                        — ${wish.author}
+                    </div>
+                    <button onclick="this.closest('[style*=fixed]').remove()" style="
+                        margin-top: 30px;
+                        padding: 12px 30px;
+                        background: linear-gradient(135deg, #ff6600, #ff9944);
+                        border: none;
+                        border-radius: 25px;
+                        color: white;
+                        font-size: 14px;
+                        cursor: pointer;
+                        box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+                    ">Fermer</button>
+                </div>
+            `;
+
+                overlay.appendChild(card);
+                document.body.appendChild(overlay);
+
+                // Add CSS animations
+                if (!document.getElementById('wish-card-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'wish-card-styles';
+                    style.textContent = `
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+                `;
+                    document.head.appendChild(style);
+                }
+            }
+
+            function createRipple(x, y) {
+                // Future expansion: Heart ripple effect
+                console.log("Ripple at", x, y);
+            }
+
+            function initAudio() {
+                // Audio initialization - placeholder for ambient sound
+                console.log("Audio system initialized");
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const time = clock.getElapsedTime();
+
+                // Smooth mouse tracking
+                mouseX += (targetMouseX - mouseX) * 0.05;
+                mouseY += (targetMouseY - mouseY) * 0.05;
+
+                // Update cursor trail
+                if (cursorTrail) {
+                    const positions = cursorTrail.geometry.attributes.position.array;
+                    // Convert screen to 3D ensuring full screen coverage
+                    const dist = 700 - 100; // Camera Z - Trail Z
+                    const vHeight = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * dist;
+                    const vWidth = vHeight * camera.aspect;
+
+                    const vector = new THREE.Vector3(
+                        mouseX * (vWidth / 2),
+                        -mouseY * (vHeight / 2),
+                        100
+                    );
+
+                    // Shift trail points
+                    for (let i = positions.length - 1; i >= 3; i -= 3) {
+                        positions[i] = positions[i - 3];
+                        positions[i - 1] = positions[i - 4];
+                        positions[i - 2] = positions[i - 5];
+                    }
+
+                    // Add new point
+                    positions[0] = vector.x;
+                    positions[1] = vector.y;
+                    positions[2] = vector.z;
+
+                    cursorTrail.geometry.attributes.position.needsUpdate = true;
+                }
+
+                // Parallax effect on nebula + Dynamic color cycle
+                if (nebula) {
+                    nebula.rotation.y += 0.0003;
+                    nebula.rotation.x = mouseY * 0.05;
+                    nebula.rotation.z = mouseX * 0.03;
+
+                    // Color cycle: red (0°) → pink (330°) → violet (270°)
+                    const colorCycleSpeed = 0.05; // Very slow cycle
+                    const hue = (time * colorCycleSpeed) % 360;
+                    const targetHue = hue < 180 ? 0 + hue * 0.5 : 330 - (hue - 180) * 0.3; // Red to pink to violet
+
+                    const colors = nebula.geometry.attributes.color.array;
+                    for (let i = 0; i < colors.length; i += 3) {
+                        const color = new THREE.Color().setHSL(targetHue / 360, 0.8, 0.5 + Math.random() * 0.2);
+                        colors[i] = color.r;
+                        colors[i + 1] = color.g;
+                        colors[i + 2] = color.b;
+                    }
+                    nebula.geometry.attributes.color.needsUpdate = true;
+                }
+
+
+                // Animate wish hearts (floating movement + rotation)
+                wishParticles.forEach((heart, i) => {
+                    // Floating movement
+                    const floatSpeed = heart.userData.floatSpeed;
+                    const floatOffset = heart.userData.floatOffset;
+
+                    heart.position.y += Math.sin(time * floatSpeed + floatOffset) * 0.5;
+                    heart.position.x += Math.cos(time * floatSpeed * 0.7 + floatOffset) * 0.3;
+
+                    // Rotation for visual interest
+                    heart.rotation.y += 0.01;
+                    heart.rotation.z = Math.sin(time + i) * 0.1;
+
+                    // Pulsing glow effect
+                    const pulse = 0.9 + Math.sin(time * 2 + i) * 0.1;
+                    heart.scale.set(pulse * 2, pulse * 2, pulse * 2);
+                    heart.material.opacity = 0.8 + Math.sin(time * 3 + i) * 0.2;
+                });
+
+                if (heartTrail) {
+                    heartTrail.rotation.z = Math.sin(time * 0.1) * 0.1;
+                    heartTrail.scale.setScalar(1 + Math.sin(time * 0.5) * 0.05);
+                }
+                if (bokehParticles) bokehParticles.position.y += Math.sin(time) * 0.1;
+                if (starBurst) starBurst.material.opacity = 0.8 + Math.sin(time * 3) * 0.1;
+
+                if (particleBear) {
+                    // Centering inside the heart volume (visual gravity center)
+                    particleBear.position.y = -30 + Math.sin(time * 0.8) * 5;
+                    particleBear.scale.setScalar(1.0 + Math.sin(time * 1.2) * 0.01);
+
+                    // Magnetic attraction: bear looks slightly toward mouse
+                    const targetRotationY = mouseX * 0.3;
+                    particleBear.rotation.y += (targetRotationY - particleBear.rotation.y) * 0.02;
+                }
+
+                camera.position.x = Math.sin(time * 0.15) * 150 + mouseX * 20;
+                camera.position.y = Math.cos(time * 0.15) * 80 + mouseY * 15;
+                camera.lookAt(0, 0, 0);
+
+                renderer.render(scene, camera);
+            }
+
+            function cyclePoetry() {
+                setInterval(() => {
+                    const el = document.getElementById('poetry-line');
+                    if (!el || document.querySelector('.modal.active')) return;
+
+                    gsap.to(el, {
+                        opacity: 0, scale: 0.95, duration: 1.5, onComplete: () => {
+                            currentLine = (currentLine + 1) % poetryLines.length;
+                            el.innerText = `"${poetryLines[currentLine]}"`;
+                            gsap.to(el, { opacity: 1, scale: 1, duration: 1.5 });
+                        }
+                    });
+                }, 8000);
+            }
+
+            // Ensuring Three.js is loaded before starting
+            function start() {
+                if (typeof THREE !== 'undefined') {
+                    init();
+                } else {
+                    console.log("Waiting for Three.js...");
+                    setTimeout(start, 100);
+                }
+            }
+
+            start();
+        </script>
+</body>
+
+</html>

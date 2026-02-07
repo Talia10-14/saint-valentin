@@ -1,0 +1,122 @@
+/* 
+   Archeology of Sentiment: Oniric UI 
+   Senior Creative UI/UX Design
+*/
+
+:root {
+    --bg-red: #cc0000;
+    --heart-glow: rgba(255, 0, 0, 0.6);
+    --text-light: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    font-family: 'Montserrat', sans-serif;
+}
+
+.glass-morph {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.neon-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+}
+
+.neon-btn:hover {
+    box-shadow: 0 0 20px var(--heart-glow), 0 0 40px var(--heart-glow);
+    transform: translateY(-2px);
+    background: white !important;
+    color: var(--bg-red) !important;
+}
+
+#memory-panel {
+    transform: translateX(120%);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+}
+
+#memory-panel.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 1.5s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 1.5s ease-out 0.5s forwards;
+    opacity: 0;
+}
+
+/* Three.js Canvas Smoothing */
+#experience-canvas {
+    touch-action: none;
+    z-index: 1;
+}
+
+/* Capture Action Animation */
+.capturing {
+    animation: capturePulse 1s ease-in-out forwards;
+}
+
+@keyframes capturePulse {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+        filter: brightness(2) blur(5px);
+    }
+
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* Custom Scrollbar (Invisible but functional for future) */
+::-webkit-scrollbar {
+    display: none;
+}
